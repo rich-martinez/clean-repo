@@ -7,7 +7,16 @@ if [[ ! -d .git ]] && [[ ! $(git rev-parse --git-dir &> /dev/null) ]]; then
   exit
 else
 
-  readonly BRANCHES_MERGED_INTO_MASTER="$(git branch --merged master | grep -v -e 'master' -e '\*')"
+  readonly FIRST_ARGUMENT=$1
+
+  # If no branch name was passes use master as the default value
+  readonly UPSTREAM_BRANCH=${FIRST_ARGUMENT:-master}
+
+  echo "$UPSTREAM_BRANCH"
+
+  readonly BRANCHES_MERGED_INTO_UPSTREAM_BRANCH="$(git checkout "$UPSTREAM_BRANCH" &> /dev/null && git branch --merged | grep -v -e '\*')"
+
+  echo "$BRANCHES_MERGED_INTO_UPSTREAM_BRANCH"
 
   # Check if there are any uncommitted changes.
   if [[ ! -z "$(git status --porcelain)" ]]; then
@@ -16,18 +25,8 @@ else
     exit
   fi
 
-  # To exclude the current branch in addition to master, add an argument of ecb,
-  # (i.e. Exclude Current Branch) when running the script.
-  if [[ "$1" != "ecb" ]]; then
-    if [[ "$(git branch | grep -e '\*' | cut -d ' ' -f2 )" != "master" ]]; then
-
-      git checkout master
-    fi
-  fi
-
-  # Delete any branches that have been merged into master, optionally excluding
-  # current branch.
-  printf "%s" "$BRANCHES_MERGED_INTO_MASTER" | xargs -n 1 git branch -d
+   # Delete any branches that have been merged into the upstream branch.
+   printf "%s" "$BRANCHES_MERGED_INTO_UPSTREAM_BRANCH" | xargs -n 1 git branch -d
 
   # Prune any existing remotes, and delete and merged remotes.
   if [[ ! -z "$(git remote)" ]]; then
@@ -38,7 +37,7 @@ else
     if [[ $? -eq 0 ]]; then
 
       # Delete any merged remote branches
-      printf "%s" "$BRANCHES_MERGED_INTO_MASTER" | xargs git push origin --delete
+      printf "%s" "$BRANCHES_MERGED_INTO_UPSTREAM_BRANCH" | xargs git push origin --delete
     else
       printf "You seem to be missing the origin remote. This script currently uses origin remote to delete remote branches.\n"
     fi
