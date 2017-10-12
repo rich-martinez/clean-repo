@@ -6,14 +6,14 @@ if [[ ! -d .git ]] && [[ ! $(git rev-parse --git-dir &> /dev/null) ]]; then
   printf "This script must be run in a git repository.\n"
   exit
 else
-  
+
   readonly FIRST_ARGUMENT=$1
 
   # If no branch name was passes use master as the default value
   readonly UPSTREAM_BRANCH=${FIRST_ARGUMENT:-master}
 
-  echo "$UPSTREAM_BRANCH
-  
+  echo "$UPSTREAM_BRANCH"
+
   # TODO: figure out how to check if a branch was merged even if the commits do not exist in the upstream branch because the branch PR was squashed and merged.
   readonly BRANCHES_MERGED_INTO_UPSTREAM_BRANCH="$(git checkout "$UPSTREAM_BRANCH" &> /dev/null && git branch --merged | grep -v -e '\*')"
 
